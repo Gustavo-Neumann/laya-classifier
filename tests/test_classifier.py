@@ -9,6 +9,7 @@ from laya_classifier.rules import (
     QUESTION_ID,
     REVIEW_OPTION,
 )
+from laya_classifier.worker import classify_request
 
 
 class FakePredictor:
@@ -88,3 +89,30 @@ def test_rules_cover_only_ifrs18_categories_and_add_review_option() -> None:
 def test_minimum_confidence_must_be_a_probability() -> None:
     with pytest.raises(ValueError, match="between 0.0 and 1.0"):
         IFRS18Classifier(FakePredictor("operating"), minimum_confidence=1.1)
+
+
+def test_worker_serializes_low_confidence_results_for_manual_review() -> None:
+    classifier = IFRS18Classifier(FakePredictor("operating", confidence=0.5))
+    request = {
+        "requestId": "b716701a-4125-48ea-bd52-6b7d464c73ea",
+        "accountId": "b716701a-4125-48ea-bd52-6b7d464c73ea",
+        "description": "Receita de venda",
+    }
+
+    result = classify_request(request, classifier)
+
+    assert result["category"] == "operating"
+    assert result["needsReview"] is True
+    assert result["classifierName"] == "laya-classifier"
+
+
+def test_worker_marks_missing_description_for_manual_review() -> None:
+    request = {
+        "requestId": "b716701a-4125-48ea-bd52-6b7d464c73ea",
+        "accountId": "b716701a-4125-48ea-bd52-6b7d464c73ea",
+    }
+
+    result = classify_request(request, IFRS18Classifier(FakePredictor("operating")))
+
+    assert result["category"] is None
+    assert result["needsReview"] is True

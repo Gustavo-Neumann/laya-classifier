@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "laya>=0.3.21",
+    "pika>=1.4.4",
 ]
 
 [dependency-groups]
@@ -18,6 +19,7 @@ dev = [
 
 [project.scripts]
 laya-classifier = "laya_classifier:main"
+laya-classifier-worker = "laya_classifier.worker:main"
 
 [build-system]
 requires = ["uv_build>=0.12.13,<0.13.0"]
